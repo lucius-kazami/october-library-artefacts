@@ -1,0 +1,8 @@
+v1.0.1: Initialize plugin.
+v1.0.2:
+    - Created tables with proper checks
+    - builder_table_create_mimic_magiclibrary_category.php
+    - builder_table_create_mimic_magiclibrary_items.php
+1.0.3:
+    - Rename image column to image_url
+    - rename_image_column_in_items_table.php

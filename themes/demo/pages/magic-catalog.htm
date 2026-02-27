@@ -1,0 +1,773 @@
+title = "Магическая библиотека"
+url = "/magic-catalog"
+layout = "default"
+is_hidden = 0
+==
+<?php
+use Mimic\MagicLibrary\Models\Category;
+use Mimic\MagicLibrary\Models\Item;
+
+function onStart()
+{
+    // Загружаем категории для отображения
+    $this['categories'] = Category::with('items')->get();
+
+// Подготавливаем данные для Vue
+$itemsArray = [];
+foreach ($this['categories'] as $category) {
+foreach ($category->items as $item) {
+if ($item->is_published) {
+$itemsArray[] = [
+'id' => $item->id,
+'name' => $item->name,
+'type' => $item->type ?? 'item',
+'rarity' => $item->rarity ?? 'common',
+'category_id' => $category->id
+];
+}
+}
+}
+
+// Передаем данные в JavaScript
+echo '<script>';
+    echo 'var itemsData = ' . json_encode($itemsArray) . ';';
+    echo 'console.log("Загружено предметов:", itemsData.length);';
+    echo '</script>';
+}
+?>
+==
+<!-- Подключаем Vue -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+
+<!-- Подключаем шрифт Cinzel для магического стиля -->
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&display=swap" rel="stylesheet">
+
+<div id="app">
+    <!-- Заголовок в магическом стиле -->
+    <h1 class="main-title">꧁⎝ 𓆩༺✧༻𓆪 ⎠꧂ Библиотека артифактов</h1>
+
+    <!-- Панель поиска в стиле магической карточки -->
+    <div class="search-panel">
+        <div class="search-row">
+            <input
+                type="text"
+                v-model="searchQuery"
+                placeholder="🔍 Поиск по названию..."
+                class="search-input"
+            >
+
+            <select v-model="typeFilter" class="filter-select">
+                <option value="">Все типы</option>
+                <option value="item">📦 артифакты</option>
+                <option value="spell">✨ свитки</option>
+            </select>
+
+            <select v-model="rarityFilter" class="filter-select">
+                <option value="">Все редкости</option>
+                <option value="common">Обычные</option>
+                <option value="rare">Редкие</option>
+                <option value="epic">Эпические</option>
+                <option value="legendary">Легендарные</option>
+            </select>
+
+            <button @click="resetFilters" class="reset-btn">Сбросить</button>
+        </div>
+
+        <div class="results-counter">
+            <span class="counter-sparkle">✦</span>
+            Найдено: {{ filteredItems.length }} из {{ items.length }} предметов
+            <span class="counter-sparkle">✦</span>
+        </div>
+    </div>
+
+    <!-- КАТАЛОГ В МАГИЧЕСКОМ СТИЛЕ -->
+    <div class="magic-container">
+        <div class="magic-stars"></div>
+
+        {% for category in categories %}
+            <div class="magic-category-wrapper" v-if="shouldShowCategory({{ category.id }})">
+                <div class="magic-category-header">
+                    <h2 class="magic-category-title">
+                        <span class="category-icon">{{ category.icon ?: '🔮' }}</span>
+                        {{ category.name }}
+                    </h2>
+                    <p class="magic-category-desc">{{ category.description }}</p>
+                    <div class="category-sparkles">
+                        <span>✦</span><span>✦</span><span>✦</span>
+                    </div>
+                </div>
+
+                <div class="items-grid">
+                    {% for item in category.items %}
+                        {% if item.is_published %}
+                            <div class="magic-card" v-if="shouldShowItem({{ item.id }})">
+                                <div class="magic-card-inner">
+                                    <div class="card-image">
+                                        {% if item.image %}
+                                            <img src="{{ item.image.getPath() }}" alt="{{ item.name }}" class="magic-item-image">
+                                        {% else %}
+                                            <div class="magic-no-image">
+                                                <span class="image-emoji">
+                                                    {% if item.type == 'spell' %}✨{% else %}📦{% endif %}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Бейдж редкости -->
+                                        <div class="rarity-badge {{ item.rarity }}">
+                                            {{ item.rarity|title }}
+                                        </div>
+                                    </div>
+
+                                    <div class="card-content">
+                                        <h3 class="item-title">{{ item.name }}</h3>
+
+                                        <div class="item-type-badge {{ item.type }}">
+                                            {% if item.type == 'spell' %}✨ Свитки{% else %}📦 Артифакты{% endif %}
+                                        </div>
+
+                                        <div class="item-stats">
+                                            <div class="stat">
+                                                <span class="stat-icon">⚡</span>
+                                                <span class="stat-value">{{ item.magic_power }}</span>
+                                            </div>
+                                            {% if item.mana_coast > 0 %}
+                                                <div class="stat">
+                                                    <span class="stat-icon">💧</span>
+                                                    <span class="stat-value">{{ item.mana_coast }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <p class="item-desc">{{ item.short_descrip|slice(0, 80) ~ '...' }}</p>
+
+                                        <a href="/magic-item/{{ item.slug }}" class="magic-button">
+                                            <span class="button-text">Подробнее</span>
+                                            <span class="button-sparkle">→</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    console.log('Vue запускается...');
+
+    const { createApp, ref, computed } = Vue;
+
+    const app = createApp({
+        setup() {
+            const searchQuery = ref('');
+            const typeFilter = ref('');
+            const rarityFilter = ref('');
+            const items = ref(itemsData || []);
+
+            const filteredItems = computed(() => {
+                return items.value.filter(item => {
+                    const matchesSearch = !searchQuery.value ||
+                        item.name.toLowerCase().includes(searchQuery.value.toLowerCase());
+                    const matchesType = !typeFilter.value || item.type === typeFilter.value;
+                    const matchesRarity = !rarityFilter.value || item.rarity === rarityFilter.value;
+                    return matchesSearch && matchesType && matchesRarity;
+                });
+            });
+
+            function shouldShowCategory(categoryId) {
+                if (!searchQuery.value && !typeFilter.value && !rarityFilter.value) {
+                    return true;
+                }
+                return filteredItems.value.some(item => item.category_id == categoryId);
+            }
+
+            function shouldShowItem(itemId) {
+                if (!searchQuery.value && !typeFilter.value && !rarityFilter.value) {
+                    return true;
+                }
+                return filteredItems.value.some(item => item.id == itemId);
+            }
+
+            function resetFilters() {
+                searchQuery.value = '';
+                typeFilter.value = '';
+                rarityFilter.value = '';
+            }
+
+            return {
+                searchQuery,
+                typeFilter,
+                rarityFilter,
+                items,
+                filteredItems,
+                shouldShowCategory,
+                shouldShowItem,
+                resetFilters
+            };
+        }
+    });
+
+    app.mount('#app');
+</script>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        background: linear-gradient(135deg, #1a0f0a 0%, #2c1810 100%);
+        min-height: 100vh;
+        padding: 40px 20px;
+        color: #e8d5c0;
+        position: relative;
+    }
+
+    /* Магический фон с звездами */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 30%, rgba(180, 130, 80, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(230, 180, 120, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 40% 50%, rgba(218, 165, 32, 0.1) 0%, transparent 60%);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Заголовок */
+    .main-title {
+        text-align: center;
+        font-size: 64px;
+        font-weight: bold;
+        color: #ffd700;
+        text-shadow: 3px 3px 0 #8b4513, 5px 5px 30px #b8860b;
+        margin: 30px 0 40px;
+        letter-spacing: 4px;
+        font-family: 'Cinzel', 'Georgia', serif;
+        position: relative;
+        animation: titleGlow 3s infinite;
+    }
+
+    @keyframes titleGlow {
+        0%, 100% { text-shadow: 3px 3px 0 #8b4513, 5px 5px 30px #b8860b; }
+        50% { text-shadow: 3px 3px 0 #8b4513, 5px 5px 50px #ffd700, 0 0 20px #daa520; }
+    }
+
+    /* Панель поиска */
+    .search-panel {
+        max-width: 1200px;
+        margin: 0 auto 50px;
+        padding: 30px;
+        background: rgba(44, 24, 16, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 2px #8b4513 inset,
+        0 0 20px #daa520 inset;
+        border: 2px solid #b8860b;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .search-panel::before {
+        content: '✦';
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        font-size: 24px;
+        color: #ffd700;
+        opacity: 0.5;
+        animation: sparkle 3s infinite;
+    }
+
+    .search-panel::after {
+        content: '✦';
+        position: absolute;
+        bottom: 10px;
+        right: 20px;
+        font-size: 24px;
+        color: #ffd700;
+        opacity: 0.5;
+        animation: sparkle 3s infinite 1.5s;
+    }
+
+    .search-row {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .search-input {
+        flex: 3;
+        min-width: 300px;
+        padding: 15px 25px;
+        background: rgba(26, 15, 10, 0.8);
+        border: 2px solid #b8860b;
+        border-radius: 40px;
+        font-size: 16px;
+        color: #ffd700;
+        font-family: 'Georgia', serif;
+        transition: all 0.3s;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #ffd700;
+        box-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
+        transform: scale(1.02);
+    }
+
+    .search-input::placeholder {
+        color: #b8860b;
+        opacity: 0.7;
+    }
+
+    .filter-select {
+        flex: 1;
+        min-width: 150px;
+        padding: 15px 25px;
+        background: rgba(26, 15, 10, 0.8);
+        border: 2px solid #b8860b;
+        border-radius: 40px;
+        font-size: 14px;
+        color: #ffd700;
+        font-family: 'Georgia', serif;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .filter-select:hover {
+        border-color: #ffd700;
+        box-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+    }
+
+    .filter-select option {
+        background: #2c1810;
+        color: #e8d5c0;
+    }
+
+    .reset-btn {
+        padding: 15px 30px;
+        background: linear-gradient(135deg, #8b4513, #b8860b);
+        color: #ffd700;
+        border: none;
+        border-radius: 40px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        border: 2px solid #daa520;
+        transition: all 0.3s;
+        min-width: 120px;
+    }
+
+    .reset-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(218, 165, 32, 0.5);
+        background: linear-gradient(135deg, #b8860b, #8b4513);
+    }
+
+    .results-counter {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px dashed #b8860b;
+        color: #daa520;
+        font-size: 18px;
+        text-align: center;
+        font-family: 'Cinzel', serif;
+        letter-spacing: 2px;
+    }
+
+    .counter-sparkle {
+        color: #ffd700;
+        font-size: 20px;
+        animation: sparkle 2s infinite;
+        margin: 0 10px;
+    }
+
+    /* Категории */
+    .magic-category-wrapper {
+        margin-bottom: 70px;
+        position: relative;
+    }
+
+    .magic-category-header {
+        text-align: center;
+        margin-bottom: 40px;
+        position: relative;
+    }
+
+    .magic-category-title {
+        font-size: 42px;
+        color: #ffd700;
+        font-family: 'Cinzel', serif;
+        text-shadow: 2px 2px 0 #8b4513, 4px 4px 20px #b8860b;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+    }
+
+    .category-icon {
+        font-size: 48px;
+        filter: drop-shadow(0 0 15px #daa520);
+        animation: float 4s ease-in-out infinite;
+    }
+
+    .magic-category-desc {
+        color: #e8d5c0;
+        font-size: 20px;
+        font-style: italic;
+        max-width: 600px;
+        margin: 0 auto 20px;
+        opacity: 0.9;
+    }
+
+    .category-sparkles {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        font-size: 24px;
+        color: #ffd700;
+    }
+
+    .category-sparkles span {
+        animation: sparkle 2s infinite;
+    }
+
+    .category-sparkles span:nth-child(2) {
+        animation-delay: 0.7s;
+    }
+
+    .category-sparkles span:nth-child(3) {
+        animation-delay: 1.4s;
+    }
+
+    /* Сетка предметов */
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 35px;
+        padding: 20px;
+    }
+
+    /* Карточка предмета */
+    .magic-card {
+        background: rgba(44, 24, 16, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5),
+        0 0 0 2px #8b4513 inset,
+        0 0 20px #daa520 inset;
+        border: 2px solid #b8860b;
+        overflow: hidden;
+        transition: all 0.5s ease;
+        position: relative;
+        height: 100%;
+    }
+
+    .magic-card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 30px 50px rgba(0, 0, 0, 0.6),
+        0 0 0 2px #daa520 inset,
+        0 0 40px #ffd700 inset;
+    }
+
+    .magic-card::before {
+        content: '✦';
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        font-size: 20px;
+        color: #ffd700;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 2;
+    }
+
+    .magic-card::after {
+        content: '✦';
+        position: absolute;
+        bottom: 15px;
+        right: 20px;
+        font-size: 20px;
+        color: #ffd700;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 2;
+    }
+
+    .magic-card:hover::before,
+    .magic-card:hover::after {
+        opacity: 0.6;
+        animation: sparkle 2s infinite;
+    }
+
+    .magic-card-inner {
+        padding: 20px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-image {
+        position: relative;
+        width: 100%;
+        height: 220px;
+        border-radius: 30px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        border: 3px solid #b8860b;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    }
+
+    .magic-item-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .magic-card:hover .magic-item-image {
+        transform: scale(1.1);
+    }
+
+    .magic-no-image {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #2c1810, #1a0f0a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .magic-no-image .image-emoji {
+        font-size: 80px;
+        filter: drop-shadow(0 0 20px #daa520);
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* Бейдж редкости */
+    .rarity-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 8px 18px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border: 2px solid;
+        z-index: 2;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .rarity-badge.common {
+        background: linear-gradient(135deg, #808080, #a0a0a0);
+        color: #2c3e50;
+        border-color: #c0c0c0;
+    }
+
+    .rarity-badge.rare {
+        background: linear-gradient(135deg, #1e3799, #4a69bd);
+        color: #fad390;
+        border-color: #f6b93b;
+    }
+
+    .rarity-badge.epic {
+        background: linear-gradient(135deg, #6a1b9a, #8e44ad);
+        color: #f3a683;
+        border-color: #f19066;
+    }
+
+    .rarity-badge.legendary {
+        background: linear-gradient(135deg, #b8860b, #daa520);
+        color: #2c1810;
+        border-color: #ffd700;
+        animation: legendary-pulse 2s infinite;
+    }
+
+    @keyframes legendary-pulse {
+        0%, 100% { box-shadow: 0 0 15px #ffd700; }
+        50% { box-shadow: 0 0 30px #ffd700, 0 0 45px #daa520; }
+    }
+
+    .card-content {
+        padding: 15px 10px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-title {
+        font-size: 28px;
+        color: #ffd700;
+        font-family: 'Cinzel', serif;
+        text-shadow: 2px 2px 0 #8b4513;
+        margin: 0 0 15px;
+        line-height: 1.3;
+    }
+
+    .item-type-badge {
+        display: inline-block;
+        padding: 6px 15px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        align-self: flex-start;
+    }
+
+    .item-type-badge.spell {
+        background: linear-gradient(135deg, #6a1b9a, #9b59b6);
+        color: #e8d5c0;
+        border: 1px solid #d4af37;
+    }
+
+    .item-type-badge.item {
+        background: linear-gradient(135deg, #2980b9, #3498db);
+        color: #e8d5c0;
+        border: 1px solid #d4af37;
+    }
+
+    .item-stats {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(139, 69, 19, 0.4);
+        padding: 8px 15px;
+        border-radius: 30px;
+        border: 1px solid #b8860b;
+    }
+
+    .stat-icon {
+        font-size: 20px;
+        filter: drop-shadow(0 0 5px #daa520);
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: bold;
+        color: #ffd700;
+    }
+
+    .item-desc {
+        color: #e8d5c0;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 25px;
+        flex-grow: 1;
+    }
+
+    /* Магическая кнопка */
+    .magic-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 25px;
+        background: linear-gradient(135deg, #8b4513, #b8860b);
+        color: #ffd700;
+        text-decoration: none;
+        border-radius: 40px;
+        font-size: 16px;
+        font-weight: bold;
+        letter-spacing: 1px;
+        border: 2px solid #daa520;
+        transition: all 0.4s ease;
+        position: relative;
+        overflow: hidden;
+        align-self: flex-start;
+    }
+
+    .magic-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .magic-button:hover {
+        transform: translateX(5px) scale(1.05);
+        background: linear-gradient(135deg, #b8860b, #8b4513);
+        box-shadow: 0 5px 20px rgba(218, 165, 32, 0.5);
+    }
+
+    .magic-button:hover::before {
+        left: 100%;
+    }
+
+    .button-sparkle {
+        font-size: 20px;
+        transition: transform 0.3s;
+    }
+
+    .magic-button:hover .button-sparkle {
+        transform: translateX(5px);
+    }
+
+    /* Анимации */
+    @keyframes sparkle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.3); text-shadow: 0 0 15px #ffd700; }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .main-title {
+            font-size: 42px;
+        }
+
+        .search-row {
+            flex-direction: column;
+        }
+
+        .search-input,
+        .filter-select,
+        .reset-btn {
+            width: 100%;
+        }
+
+        .items-grid {
+            grid-template-columns: 1fr;
+            padding: 10px;
+        }
+
+        .magic-category-title {
+            font-size: 32px;
+        }
+
+        .item-title {
+            font-size: 24px;
+        }
+    }
+</style>

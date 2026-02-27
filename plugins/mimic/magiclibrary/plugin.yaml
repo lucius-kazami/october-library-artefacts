@@ -1,0 +1,15 @@
+plugin:
+    name: 'mimic.magiclibrary::lang.plugin.name'
+    description: 'mimic.magiclibrary::lang.plugin.description'
+    author: mimic
+    icon: oc-icon-bullseye
+    homepage: ''
+navigation:
+    main-menu-item:
+        label: 'Библиотека артифактов'
+        url: mimic/magiclibrary/items
+        icon: icon-arrow-circle-o-down
+    main-menu-item2:
+        label: Категории
+        url: mimic/magiclibrary/categories
+        icon: icon-caret-down

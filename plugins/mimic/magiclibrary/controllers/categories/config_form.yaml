@@ -1,0 +1,10 @@
+name: Categories
+form: $/mimic/magiclibrary/models/category/fields.yaml
+modelClass: Mimic\MagicLibrary\Models\Category
+defaultRedirect: mimic/magiclibrary/categories
+create:
+    redirect: 'mimic/magiclibrary/categories/update/:id'
+    redirectClose: mimic/magiclibrary/categories
+update:
+    redirect: mimic/magiclibrary/categories
+    redirectClose: mimic/magiclibrary/categories

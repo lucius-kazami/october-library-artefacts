@@ -1,0 +1,10 @@
+name: Items
+form: $/mimic/magiclibrary/models/item/category.yaml
+modelClass: Mimic\MagicLibrary\Models\Item
+defaultRedirect: mimic/magiclibrary/items
+create:
+    redirect: 'mimic/magiclibrary/items/update/:id'
+    redirectClose: mimic/magiclibrary/items
+update:
+    redirect: mimic/magiclibrary/items
+    redirectClose: mimic/magiclibrary/items

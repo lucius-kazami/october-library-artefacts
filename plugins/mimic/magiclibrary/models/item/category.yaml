@@ -1,0 +1,91 @@
+fields:
+    name:
+        label: 'Название'
+        span: auto
+        type: text
+        required: 1
+
+    slug:
+        label: 'Символьный код'
+        span: auto
+        type: text
+        preset: name  # автоматически заполняется из name
+
+    type:
+        label: 'Тип'
+        span: auto
+        type: dropdown
+        options:
+            spell: 'Свиток'
+            item: 'Артифакт'
+        required: 1
+        emptyOption: '-- выберите тип --'
+
+    category:
+        label: 'Категория'
+        span: auto
+        type: relation
+        nameFrom: name
+        descriptionFrom: description
+        emptyOption: '-- выберите категорию --'
+        required: 1
+
+    magic_power:
+        label: 'Сила'
+        span: auto
+        type: number
+        required: 1
+
+    mana_coast:
+        label: 'Стоимость маны'
+        span: auto
+        type: number
+        default: 0
+
+    rarity:
+        label: 'Редкость'
+        span: auto
+        type: dropdown
+        options:
+            common: 'Обычный'
+            rare: 'Редкий'
+            epic: 'Эпический'
+            legendary: 'Легендарный'
+        required: 1
+        emptyOption: '-- выберите редкость --'
+
+    short_descrip:
+        label: 'Краткое описание'
+        span: auto
+        type: text
+        required: 1
+
+    description:
+        label: 'Полное описание'
+        span: auto
+        type: textarea
+        size: large
+        required: 1
+
+    image:
+        label: 'Изображение'
+        span: auto
+        type: fileupload
+        mode: image
+        imageHeight: 200
+        imageWidth: 200
+        thumbOptions:
+            mode: crop
+            extension: auto
+
+    image_url:
+        label: 'Ссылка на изображение'
+        span: auto
+        type: text
+        comment: 'Используйте только если не загружаете файл'
+
+    is_published:
+        label: 'Опубликовано'
+        span: auto
+        type: checkbox
+        default: true

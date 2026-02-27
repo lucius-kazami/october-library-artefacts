@@ -1,0 +1,13 @@
+columns:
+    id:
+        label: ID
+        type: number
+    name:
+        label: Название
+        type: text
+    slug:
+        label: 'Символьный код'
+        type: text
+    created_at:
+        label: 'Дата создание'
+        type: datetime
