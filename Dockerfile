@@ -1,6 +1,6 @@
 FROM php:7.4-apache
 
-# Устанавливаем зависимости для Postgres и расширения PHP
+# 1. Устанавливаем системные зависимости для Postgres и PHP расширений
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libpng-dev \
@@ -9,18 +9,22 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip
 
-# Включаем mod_rewrite для работы роутов OctoberCMS
+# 2. Исправляем ошибку "More than one MPM loaded"
+# Отключаем лишние модули и принудительно включаем prefork (нужен для PHP)
+RUN a2dismod mpm_event && a2enmod mpm_prefork
+
+# 3. Включаем mod_rewrite для работы роутов OctoberCMS
 RUN a2enmod rewrite
 
-# Копируем файлы проекта
+# 4. Копируем файлы проекта
 COPY . /var/www/html/
 
-# Настройка прав для OctoberCMS
+# 5. Настройка прав для папок OctoberCMS
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/themes /var/www/html/plugins
+RUN chmod -R 775 /var/www/html/storage /var/www/html/themes /var/www/html/plugins
 
-# Указываем порт для Railway
+# Указываем порт
 ENV PORT 80
 EXPOSE 80
 
-# Запуск через Apache (он сам подхватит index.php)
 CMD ["apache2-foreground"]
