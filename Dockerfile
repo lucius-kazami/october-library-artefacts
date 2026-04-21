@@ -19,4 +19,4 @@ RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-
 RUN chmod -R 775 storage themes plugins
 
 # 6. Запуск сервера
-CMD php -S 0.0.0.0:$PORT index.php
+CMD php artisan october:up --force && php -S 0.0.0.0:$PORT index.php
