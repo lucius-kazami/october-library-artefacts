@@ -13,8 +13,7 @@ COPY . /var/www/html
 WORKDIR /var/www/html
 
 # 4. УСТАНАВЛИВАЕМ БИБЛИОТЕКИ (те самые vendor файлы)
-# Мы игнорируем системные требования, чтобы сборка прошла успешно в любом случае
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
 # 5. Настройка прав (OctoberCMS это критично)
 RUN chmod -R 775 storage themes plugins
