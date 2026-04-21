@@ -17,20 +17,14 @@
             "role": "Co-founder"
         }
     ],
-    "support": {
-        "paid": "https://octobercms.com/premium-support",
-        "issues": "https://github.com/octobercms/october/issues",
-        "forum": "https://octobercms.com/forum/",
-        "docs": "https://octobercms.com/docs/",
-        "source": "https://github.com/octobercms/october"
-    },
     "require": {
-        "php": ">=7.2.9",
+        "php": ">=7.2.9 <8.0",
         "october/rain": "1.1.*",
         "october/system": "1.1.*",
         "october/backend": "1.1.*",
         "october/cms": "1.1.*",
-        "laravel/framework": "~6.0"
+        "laravel/framework": "~6.0",
+        "league/csv": "9.7.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^8.4|^9.3.3",
@@ -65,15 +59,16 @@
             "phpcs --colors -nq --report=\"full\" --extensions=\"php\""
         ]
     },
-    "config":{
+    "config": {
         "platform": {
-                "php": "7.4.33"
-            },
-            "preferred-install": "dist",
-            "allow-plugins": {
-                "composer/installers": true
-            }
+            "php": "7.4.33"
         },
-        "minimum-stability": "dev",
-        "prefer-stable": true
-    }
+        "preferred-install": "dist",
+        "allow-plugins": {
+            "composer/installers": true,
+            "october/rain": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
