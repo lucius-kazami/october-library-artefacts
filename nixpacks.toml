@@ -1,11 +1,11 @@
 [variables]
-    PHP_VERSION = '7.4'
+    NIXPACKS_PHP_VARIANT = 'pypa'
 
 [phases.setup]
     nixPkgs = ['php74', 'php74Extensions.pdo_pgsql', 'php74Extensions.pgsql', 'php74Extensions.gd', 'php74Extensions.zip', 'nodejs']
 
-[phases.build]
-    cmds = ['composer install --no-dev --ignore-platform-reqs']
+[phases.install]
+    cmds = ['composer install --ignore-platform-reqs']
 
 [start]
     cmd = 'php -S 0.0.0.0:$PORT index.php'
