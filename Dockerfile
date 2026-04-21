@@ -1,28 +1,17 @@
-FROM php:7.4-apache
+FROM php:7.4-cli
 
-# 1. Устанавливаем системные зависимости
+# 1. Устанавливаем только нужные системные пакеты
 RUN apt-get update && apt-get install -y \
     libpq-dev libpng-dev libzip-dev zip unzip \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip
 
-# 2. ЖЕСТКОЕ РЕШЕНИЕ ПРОБЛЕМЫ MPM:
-# Удаляем все файлы конфигурации MPM, кроме prefork, чтобы у Apache не было выбора
-RUN rm -f /etc/apache2/mods-enabled/mpm_event.load /etc/apache2/mods-enabled/mpm_event.conf \
-    && rm -f /etc/apache2/mods-enabled/mpm_worker.load /etc/apache2/mods-enabled/mpm_worker.conf \
-    && a2enmod mpm_prefork
+# 2. Копируем проект
+COPY . /var/www/html
+WORKDIR /var/www/html
 
-# 3. Включаем mod_rewrite
-RUN a2enmod rewrite
+# 3. Настройка прав
+RUN chmod -R 775 storage themes plugins
 
-# 4. Копируем файлы проекта
-COPY . /var/www/html/
-
-# 5. Настройка прав
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/themes /var/www/html/plugins \
-    && chmod -R 775 /var/www/html/storage /var/www/html/themes /var/www/html/plugins
-
-# Указываем порт (Railway сам прокинет 80-й порт наружу)
-ENV PORT 80
-EXPOSE 80
-
-CMD ["apache2-foreground"]
+# 4. Запускаем встроенный сервер PHP напрямую
+# Мы используем 0.0.0.0, чтобы Railway мог "увидеть" контейнер снаружи
+CMD php -S 0.0.0.0:$PORT index.php
