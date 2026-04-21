@@ -73,4 +73,13 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true
+},
+"config": {
+    "platform": {
+        "php": "7.4.33"
+    },
+    "allow-plugins": {
+        "composer/installers": true,
+        "october/rain": true
+    }
 }
