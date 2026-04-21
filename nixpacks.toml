@@ -1,0 +1,8 @@
+[variables]
+    PHP_VERSION = '7.4'
+
+[phases.setup]
+    nixPkgs = ['...', 'php74', 'php74Extensions.pdo_pgsql', 'php74Extensions.pgsql', 'php74Extensions.gd', 'php74Extensions.zip']
+
+[phases.build]
+    cmds = ['composer install --no-dev']
