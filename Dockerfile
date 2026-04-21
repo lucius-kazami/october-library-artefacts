@@ -18,5 +18,4 @@ RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-
 # 5. Права доступа
 RUN chmod -R 775 storage themes plugins
 
-# 6. МАГИЧЕСКАЯ СТРОКА: сначала миграция, потом запуск сервера
-CMD php artisan october:up --force && php -S 0.0.0.0:$PORT index.php
+CMD php -S 0.0.0.0:$PORT index.php
