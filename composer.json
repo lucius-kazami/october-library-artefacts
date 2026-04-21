@@ -65,21 +65,15 @@
             "phpcs --colors -nq --report=\"full\" --extensions=\"php\""
         ]
     },
-    "config": {
-        "preferred-install": "dist",
-        "allow-plugins": {
-            "composer/installers": true
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
-},
-"config": {
-    "platform": {
-        "php": "7.4.33"
-    },
-    "allow-plugins": {
-        "composer/installers": true,
-        "october/rain": true
+    "config":{
+        "platform": {
+                "php": "7.4.33"
+            },
+            "preferred-install": "dist",
+            "allow-plugins": {
+                "composer/installers": true
+            }
+        },
+        "minimum-stability": "dev",
+        "prefer-stable": true
     }
-}
