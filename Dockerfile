@@ -1,6 +1,6 @@
 FROM php:7.4-apache
 
-# 1. Устанавливаем системные зависимости для Postgres и PHP расширений
+# 1. Устанавливаем системные зависимости для Postgres и PHP
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     libpng-dev \
@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && docker-php-ext-install pdo pdo_pgsql pgsql gd zip
 
-# 2. Исправляем ошибку "More than one MPM loaded"
-# Отключаем лишние модули и принудительно включаем prefork (нужен для PHP)
-RUN a2dismod mpm_event && a2enmod mpm_prefork
+# 2. РЕШАЕМ ПРОБЛЕМУ MPM:
+# Отключаем mpm_event и mpm_worker, включаем mpm_prefork (который нужен для PHP)
+RUN a2dismod mpm_event mpm_worker || true && a2enmod mpm_prefork
 
 # 3. Включаем mod_rewrite для работы роутов OctoberCMS
 RUN a2enmod rewrite
@@ -19,7 +19,7 @@ RUN a2enmod rewrite
 # 4. Копируем файлы проекта
 COPY . /var/www/html/
 
-# 5. Настройка прав для папок OctoberCMS
+# 5. Настройка прав (OctoberCMS это любит)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/themes /var/www/html/plugins
 RUN chmod -R 775 /var/www/html/storage /var/www/html/themes /var/www/html/plugins
 
